@@ -13,45 +13,48 @@ with open("fleet.yaml", "r") as file:
     fleet_data = yaml.safe_load(file)
 
 
-tracked_aircraft = fleet_data["aircraft"]
+tracked_aircraft = {}
+
+for aircraft in fleet_data["aircraft"]:
+    tracked_aircraft[aircraft["icao24"].lower()] = {
+        "registration": aircraft["registration"],
+        "type": aircraft["type"]
+    }
 
 
 status = []
 
 
-for aircraft_info in tracked_aircraft:
+try:
 
-    icao24 = aircraft_info["icao24"].lower()
-    registration = aircraft_info["registration"]
-    aircraft_type = aircraft_info["type"]
+    response = requests.get(
+        "https://opensky-network.org/api/states/all",
+        auth=(username, password),
+        timeout=120
+    )
 
+    response.raise_for_status()
 
-    try:
-
-        response = requests.get(
-            "https://opensky-network.org/api/states/all",
-            params={
-                "icao24": icao24
-            },
-            auth=(username, password),
-            timeout=60
-        )
+    data = response.json()
 
 
-        if response.status_code != 200:
-            status.append(
-                f"❌ **{registration}**\n"
-                f"OpenSky error: {response.status_code}"
-            )
-            continue
+    detected = {}
+
+    for state in data.get("states", []):
+
+        icao = state[0].lower()
+
+        if icao in tracked_aircraft:
+            detected[icao] = state
 
 
-        data = response.json()
+    for icao, info in tracked_aircraft.items():
 
-        states = data.get("states")
+        registration = info["registration"]
+        aircraft_type = info["type"]
 
 
-        if not states:
+        if icao not in detected:
 
             status.append(
                 f"⚪ **{registration}**\n"
@@ -62,7 +65,7 @@ for aircraft_info in tracked_aircraft:
             continue
 
 
-        state = states[0]
+        state = detected[icao]
 
 
         callsign = (
@@ -72,62 +75,38 @@ for aircraft_info in tracked_aircraft:
         )
 
 
-        altitude_ft = (
+        altitude = (
             round(state[7] * 3.28084)
             if isinstance(state[7], (int, float))
             else None
         )
 
 
-        speed_kts = (
+        speed = (
             round(state[9] * 1.94384)
             if isinstance(state[9], (int, float))
             else None
         )
 
 
-        latitude = state[6]
-        longitude = state[5]
-
-
-        altitude_display = (
-            f"{altitude_ft:,} ft"
-            if altitude_ft is not None
-            else "Unknown"
-        )
-
-
-        speed_display = (
-            f"{speed_kts} kts"
-            if speed_kts is not None
-            else "Unknown"
-        )
-
-
-        position_display = (
-            f"{latitude:.3f}, {longitude:.3f}"
-            if isinstance(latitude, (int, float))
-            and isinstance(longitude, (int, float))
-            else "Unknown"
-        )
+        lat = state[6]
+        lon = state[5]
 
 
         status.append(
             f"🟢 **{registration}**\n"
             f"{aircraft_type}\n"
             f"Flight: `{callsign}`\n"
-            f"Altitude: `{altitude_display}`\n"
-            f"Speed: `{speed_display}`\n"
-            f"Position: `{position_display}`"
+            f"Altitude: `{altitude:,} ft`" if altitude else
+            f"Altitude: `Unknown`"
         )
 
 
-    except Exception as e:
+except Exception as e:
 
-        status.append(
-            f"❌ **{registration}**\n"
-            f"Error: {e}"
-        )
+    status.append(
+        f"❌ OpenSky Error:\n`{e}`"
+    )
 
 
 message = (
@@ -139,7 +118,5 @@ message = (
 
 requests.post(
     WEBHOOK,
-    json={
-        "content": message
-    }
+    json={"content": message}
 )

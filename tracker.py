@@ -14,10 +14,23 @@ response = requests.get(
 
 data = response.json()
 
-count = len(data.get("states", []))
+lufthansa = []
 
-payload = {
-    "content": f"OpenSky returned {count:,} aircraft states."
-}
+for aircraft in data.get("states", []):
+    callsign = aircraft[1]
 
-requests.post(WEBHOOK, json=payload)
+    if callsign and callsign.startswith("DLH"):
+        lufthansa.append(
+            f"{callsign.strip()} | {aircraft[0]}"
+        )
+
+if lufthansa:
+    message = "✈ Lufthansa aircraft detected:\n\n"
+    message += "\n".join(lufthansa[:20])
+else:
+    message = "No Lufthansa aircraft currently detected."
+
+requests.post(
+    WEBHOOK,
+    json={"content": message}
+)

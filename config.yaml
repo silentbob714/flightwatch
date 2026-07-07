@@ -1,0 +1,8 @@
+watch_airports:
+  - KLAX
+
+aircraft:
+  - D-ABYN
+  - D-ABPU
+  - D-AIXL
+  - D-AIMH

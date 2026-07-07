@@ -9,11 +9,15 @@ password = os.environ["OPENSKY_PASSWORD"]
 response = requests.get(
     "https://opensky-network.org/api/states/all",
     auth=(username, password),
-    timeout=30
+    timeout=60
 )
 
+data = response.json()
+
+count = len(data.get("states", []))
+
 payload = {
-    "content": f"OpenSky Status: {response.status_code}"
+    "content": f"OpenSky returned {count:,} aircraft states."
 }
 
 requests.post(WEBHOOK, json=payload)

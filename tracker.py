@@ -9,7 +9,7 @@ password = os.environ["OPENSKY_PASSWORD"]
 response = requests.get(
     "https://opensky-network.org/api/states/all",
     auth=(username, password),
-    timeout=60
+    timeout=120
 )
 
 data = response.json()

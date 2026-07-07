@@ -39,6 +39,10 @@ for aircraft_info in tracked_aircraft:
 
 
         if response.status_code != 200:
+            status.append(
+                f"❌ **{registration}**\n"
+                f"OpenSky error: {response.status_code}"
+            )
             continue
 
 
@@ -70,15 +74,15 @@ for aircraft_info in tracked_aircraft:
 
         altitude_ft = (
             round(state[7] * 3.28084)
-            if state[7]
-            else "N/A"
+            if isinstance(state[7], (int, float))
+            else None
         )
 
 
         speed_kts = (
             round(state[9] * 1.94384)
-            if state[9]
-            else "N/A"
+            if isinstance(state[9], (int, float))
+            else None
         )
 
 
@@ -86,13 +90,35 @@ for aircraft_info in tracked_aircraft:
         longitude = state[5]
 
 
+        altitude_display = (
+            f"{altitude_ft:,} ft"
+            if altitude_ft is not None
+            else "Unknown"
+        )
+
+
+        speed_display = (
+            f"{speed_kts} kts"
+            if speed_kts is not None
+            else "Unknown"
+        )
+
+
+        position_display = (
+            f"{latitude:.3f}, {longitude:.3f}"
+            if isinstance(latitude, (int, float))
+            and isinstance(longitude, (int, float))
+            else "Unknown"
+        )
+
+
         status.append(
             f"🟢 **{registration}**\n"
             f"{aircraft_type}\n"
             f"Flight: `{callsign}`\n"
-            f"Altitude: `{altitude_ft:,} ft`\n"
-            f"Speed: `{speed_kts} kts`\n"
-            f"Position: `{latitude:.3f}, {longitude:.3f}`"
+            f"Altitude: `{altitude_display}`\n"
+            f"Speed: `{speed_display}`\n"
+            f"Position: `{position_display}`"
         )
 
 

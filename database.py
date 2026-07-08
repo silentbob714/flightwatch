@@ -6,7 +6,6 @@ DATABASE = "flightwatch.db"
 
 
 def get_connection():
-
     return sqlite3.connect(DATABASE)
 
 
@@ -35,6 +34,8 @@ def initialize_database():
             latitude REAL,
 
             longitude REAL,
+
+            first_seen TEXT,
 
             last_seen TEXT
 
@@ -83,10 +84,28 @@ def save_state(
     conn = get_connection()
     cursor = conn.cursor()
 
+
+    existing = get_previous_state(
+        registration
+    )
+
+
+    now = datetime.utcnow().isoformat()
+
+
+    if existing:
+
+        first_seen = existing[9]
+
+    else:
+
+        first_seen = now
+
+
     cursor.execute(
         """
         INSERT OR REPLACE INTO aircraft_state
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             registration,
@@ -97,9 +116,11 @@ def save_state(
             speed,
             latitude,
             longitude,
-            datetime.utcnow().isoformat()
+            first_seen,
+            now
         )
     )
+
 
     conn.commit()
     conn.close()

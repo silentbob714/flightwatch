@@ -2,19 +2,18 @@ import os
 import yaml
 import requests
 from datetime import datetime, timezone
+from dotenv import load_dotenv
 
 from datasource import get_aircraft_positions
 
+load_dotenv()
 
-WEBHOOK = os.environ["DISCORD_WEBHOOK"]
-
+WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
 with open("fleet.yaml", "r") as file:
     fleet_data = yaml.safe_load(file)
 
-
 fleet = fleet_data["aircraft"]
-
 
 positions = get_aircraft_positions()
 
@@ -24,13 +23,11 @@ def get_location_name(latitude, longitude):
     if latitude is None or longitude is None:
         return "Unknown"
 
-
     if (
         49.9 < latitude < 50.2
         and 8.3 < longitude < 8.8
     ):
         return "Frankfurt Airport area (FRA)"
-
 
     if (
         33.8 < latitude < 34.1
@@ -38,13 +35,11 @@ def get_location_name(latitude, longitude):
     ):
         return "Los Angeles Airport area (LAX)"
 
-
     if (
         48.2 < latitude < 48.5
         and 11.4 < longitude < 11.8
     ):
         return "Munich Airport area (MUC)"
-
 
     if (
         35 < latitude < 60
@@ -52,24 +47,19 @@ def get_location_name(latitude, longitude):
     ):
         return "Europe"
 
-
     if (
         -60 < longitude < -10
         and 20 < latitude < 70
     ):
         return "Atlantic Ocean"
 
-
     if longitude < -100:
         return "Pacific region"
-
 
     return "Unknown area"
 
 
-
 status = []
-
 
 for aircraft in fleet:
 
@@ -77,7 +67,6 @@ for aircraft in fleet:
 
     registration = aircraft["registration"]
     aircraft_type = aircraft["type"]
-
 
     if icao not in positions:
 
@@ -89,9 +78,7 @@ for aircraft in fleet:
 
         continue
 
-
     data = positions[icao]
-
 
     altitude_ft = (
         round(data["altitude"] * 3.28084)
@@ -99,13 +86,11 @@ for aircraft in fleet:
         else 0
     )
 
-
     speed_kts = (
         round(data["velocity"] * 1.94384)
         if isinstance(data["velocity"], (int, float))
         else 0
     )
-
 
     if altitude_ft > 1000:
 
@@ -127,8 +112,6 @@ for aircraft in fleet:
         icon = "🔵"
         aircraft_status = "On ground"
 
-
-
     callsign = data["callsign"]
 
     if not callsign or callsign == "Unknown":
@@ -139,20 +122,15 @@ for aircraft in fleet:
             else "Not transmitting"
         )
 
-
-
     latitude = data["latitude"]
     longitude = data["longitude"]
-
 
     if (
         isinstance(latitude, (int, float))
         and isinstance(longitude, (int, float))
     ):
 
-        position = (
-            f"{latitude:.3f}, {longitude:.3f}"
-        )
+        position = f"{latitude:.3f}, {longitude:.3f}"
 
         map_link = (
             f"https://www.google.com/maps?q="
@@ -170,35 +148,28 @@ for aircraft in fleet:
         map_link = None
         location = "Unknown"
 
-
-
     if data["last_contact"]:
 
         age_seconds = (
             datetime.now(timezone.utc).timestamp()
-            -
-            data["last_contact"]
+            - data["last_contact"]
         )
-
 
         contact = (
             f"{round(age_seconds)} seconds ago"
             if age_seconds < 60
-            else f"{round(age_seconds/60)} minutes ago"
+            else f"{round(age_seconds / 60)} minutes ago"
         )
 
     else:
 
         contact = "Unknown"
 
-
-
     map_text = (
         f"[📍 View aircraft position]({map_link})"
         if map_link
         else "Unavailable"
     )
-
 
     status.append(
         f"{icon} **{registration}**\n"
@@ -213,17 +184,18 @@ for aircraft in fleet:
         f"Last contact: `{contact}`"
     )
 
-
 message = (
-    "✈ **Lufthansa 100th Anniversary Fleet Tracker**\n\n"
-    +
-    "\n\n".join(status)
+    "✈ **FlightWatch**\n\n"
+    + "\n\n".join(status)
 )
 
-
-requests.post(
+response = requests.post(
     WEBHOOK,
     json={
         "content": message
     }
+)
+
+print(
+    f"Discord response: {response.status_code}"
 )

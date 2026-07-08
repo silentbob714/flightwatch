@@ -1,5 +1,6 @@
 import time
 import subprocess
+import sys
 from datetime import datetime
 
 
@@ -9,20 +10,25 @@ INTERVAL = 60
 def run_tracker():
 
     print(
-        f"[{datetime.now()}] Running FlightWatch check..."
+        f"[{datetime.now()}] Running FlightWatch check...",
+        flush=True
     )
 
     result = subprocess.run(
-        ["python", "tracker.py"],
+        [
+            sys.executable,
+            "tracker.py"
+        ],
         capture_output=True,
         text=True
     )
 
-    print(result.stdout)
+    if result.stdout:
+        print(result.stdout, flush=True)
 
     if result.stderr:
-        print("ERROR:")
-        print(result.stderr)
+        print("ERROR:", flush=True)
+        print(result.stderr, flush=True)
 
 
 while True:
@@ -34,11 +40,13 @@ while True:
     except Exception as e:
 
         print(
-            f"FlightWatch error: {e}"
+            f"FlightWatch error: {e}",
+            flush=True
         )
 
     print(
-        f"Sleeping {INTERVAL} seconds..."
+        f"Sleeping {INTERVAL} seconds...",
+        flush=True
     )
 
     time.sleep(INTERVAL)

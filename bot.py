@@ -35,62 +35,55 @@ class FlightWatchBot(commands.Bot):
 
     async def setup_hook(self):
 
-        print("Loading cogs...", flush=True)
-
-
         await self.load_extension(
             "cogs.aircraft"
         )
-
-        print("Loaded aircraft cog", flush=True)
-
 
         await self.load_extension(
             "cogs.fleet"
         )
 
-        print("Loaded fleet cog", flush=True)
-
-
         await self.load_extension(
             "cogs.system"
         )
 
-        print("Loaded system cog", flush=True)
 
-
-
-        print(
-            "Copying application commands...",
-            flush=True
+        guild = discord.Object(
+            id=GUILD_ID
         )
+
+
+        # Remove old global commands
+        self.tree.clear_commands(
+            guild=None
+        )
+
+
+        print("Copying application commands...")
 
 
         self.tree.copy_global_to(
-            guild=discord.Object(
-                id=GUILD_ID
-            )
+            guild=guild
         )
 
 
+        print("Syncing guild commands...")
+
+
         synced = await self.tree.sync(
-            guild=discord.Object(
-                id=GUILD_ID
-            )
+            guild=guild
         )
 
 
         print(
-            f"Synced {len(synced)} guild commands:",
-            flush=True
+            f"Synced {len(synced)} guild commands:"
         )
 
 
         for command in synced:
 
             print(
-                f"- /{command.name}",
-                flush=True
+                f"- /{command.name}"
             )
 
 
@@ -103,8 +96,7 @@ bot = FlightWatchBot()
 async def on_ready():
 
     print(
-        f"Logged in as {bot.user}",
-        flush=True
+        f"Logged in as {bot.user}"
     )
 
 

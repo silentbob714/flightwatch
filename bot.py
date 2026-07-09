@@ -31,6 +31,7 @@ class FlightWatchBot(commands.Bot):
         )
 
 
+
     async def setup_hook(self):
 
         await self.load_extension(
@@ -45,16 +46,20 @@ class FlightWatchBot(commands.Bot):
             "cogs.system"
         )
 
+
         synced = await self.tree.sync()
 
-print(
-    f"Synced {len(synced)} commands:"
-)
 
-for command in synced:
-    print(
-        f"- /{command.name}"
-    )
+        print(
+            f"Synced {len(synced)} commands:"
+        )
+
+
+        for command in synced:
+
+            print(
+                f"- /{command.name}"
+            )
 
 
 

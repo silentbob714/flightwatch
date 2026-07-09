@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 
-INTERVAL = 60
+INTERVAL = 600
 
 
 def run_tracker():

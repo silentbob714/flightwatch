@@ -35,28 +35,31 @@ class FlightWatchBot(commands.Bot):
 
     async def setup_hook(self):
 
-        print("Loading cogs...")
+        print("===== SETUP HOOK START =====", flush=True)
+
+
+        print("Loading cogs...", flush=True)
 
 
         await self.load_extension(
             "cogs.aircraft"
         )
 
-        print("Loaded aircraft cog")
+        print("Loaded aircraft cog", flush=True)
 
 
         await self.load_extension(
             "cogs.fleet"
         )
 
-        print("Loaded fleet cog")
+        print("Loaded fleet cog", flush=True)
 
 
         await self.load_extension(
             "cogs.system"
         )
 
-        print("Loaded system cog")
+        print("Loaded system cog", flush=True)
 
 
 
@@ -65,24 +68,7 @@ class FlightWatchBot(commands.Bot):
         )
 
 
-        print("Clearing old guild commands...")
-
-
-        self.tree.clear_commands(
-            guild=guild
-        )
-
-
-        await self.tree.sync(
-            guild=guild
-        )
-
-
-        print("Old guild commands cleared.")
-
-
-
-        print("Syncing fresh guild commands...")
+        print("Syncing commands...", flush=True)
 
 
         synced = await self.tree.sync(
@@ -91,15 +77,20 @@ class FlightWatchBot(commands.Bot):
 
 
         print(
-            f"Synced {len(synced)} guild commands:"
+            f"Synced {len(synced)} commands",
+            flush=True
         )
 
 
         for command in synced:
 
             print(
-                f"- /{command.name}"
+                f"/{command.name}",
+                flush=True
             )
+
+
+        print("===== SETUP HOOK COMPLETE =====", flush=True)
 
 
 
@@ -113,7 +104,8 @@ bot = FlightWatchBot()
 async def on_ready():
 
     print(
-        f"Logged in as {bot.user}"
+        f"Logged in as {bot.user}",
+        flush=True
     )
 
 

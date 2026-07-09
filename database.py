@@ -1,180 +1,249 @@
 import sqlite3
 from datetime import datetime
 
-
 DATABASE = "flightwatch.db"
 
-
 def get_connection():
-    return sqlite3.connect(DATABASE)
-
+return sqlite3.connect(DATABASE)
 
 def initialize_database():
 
-    conn = get_connection()
-    cursor = conn.cursor()
+```
+conn = get_connection()
+cursor = conn.cursor()
 
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS aircraft_state (
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS tracked_aircraft (
 
-            registration TEXT PRIMARY KEY,
+        registration TEXT PRIMARY KEY,
 
-            aircraft_type TEXT,
+        icao24 TEXT NOT NULL,
 
-            status TEXT,
+        aircraft_type TEXT,
 
-            callsign TEXT,
+        active INTEGER DEFAULT 1,
 
-            altitude INTEGER,
+        added_date TEXT
 
-            speed INTEGER,
-
-            latitude REAL,
-
-            longitude REAL,
-
-            first_seen TEXT,
-
-            last_seen TEXT
-
-        )
-        """
     )
+    """
+)
 
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS aircraft_events (
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS aircraft_state (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        registration TEXT PRIMARY KEY,
 
-            registration TEXT,
+        aircraft_type TEXT,
 
-            aircraft_type TEXT,
+        status TEXT,
 
-            event_type TEXT,
+        callsign TEXT,
 
-            callsign TEXT,
+        altitude INTEGER,
 
-            latitude REAL,
+        speed INTEGER,
 
-            longitude REAL,
+        latitude REAL,
 
-            timestamp TEXT
+        longitude REAL,
 
-        )
-        """
+        first_seen TEXT,
+
+        last_seen TEXT
+
     )
+    """
+)
 
-    conn.commit()
-    conn.close()
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS aircraft_events (
 
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        registration TEXT,
+
+        aircraft_type TEXT,
+
+        event_type TEXT,
+
+        callsign TEXT,
+
+        latitude REAL,
+
+        longitude REAL,
+
+        timestamp TEXT
+
+    )
+    """
+)
+
+conn.commit()
+conn.close()
+```
 
 def get_previous_state(registration):
 
-    conn = get_connection()
-    cursor = conn.cursor()
+```
+conn = get_connection()
+cursor = conn.cursor()
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM aircraft_state
-        WHERE registration = ?
-        """,
-        (registration,)
-    )
+cursor.execute(
+    """
+    SELECT *
+    FROM aircraft_state
+    WHERE registration = ?
+    """,
+    (registration,)
+)
 
-    result = cursor.fetchone()
+result = cursor.fetchone()
 
-    conn.close()
+conn.close()
 
-    return result
-
+return result
+```
 
 def save_state(
-    registration,
-    aircraft_type,
-    status,
-    callsign,
-    altitude,
-    speed,
-    latitude,
-    longitude
+registration,
+aircraft_type,
+status,
+callsign,
+altitude,
+speed,
+latitude,
+longitude
 ):
 
-    conn = get_connection()
-    cursor = conn.cursor()
+```
+conn = get_connection()
+cursor = conn.cursor()
 
-    existing = get_previous_state(
-        registration
+existing = get_previous_state(registration)
+
+now = datetime.utcnow().isoformat()
+
+if existing:
+    first_seen = existing[8]
+else:
+    first_seen = now
+
+cursor.execute(
+    """
+    INSERT OR REPLACE INTO aircraft_state
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """,
+    (
+        registration,
+        aircraft_type,
+        status,
+        callsign,
+        altitude,
+        speed,
+        latitude,
+        longitude,
+        first_seen,
+        now
     )
+)
 
-    now = datetime.utcnow().isoformat()
-
-    if existing:
-        first_seen = existing[8]
-    else:
-        first_seen = now
-
-    cursor.execute(
-        """
-        INSERT OR REPLACE INTO aircraft_state
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            registration,
-            aircraft_type,
-            status,
-            callsign,
-            altitude,
-            speed,
-            latitude,
-            longitude,
-            first_seen,
-            now
-        )
-    )
-
-    conn.commit()
-    conn.close()
-
+conn.commit()
+conn.close()
+```
 
 def log_event(
-    registration,
-    aircraft_type,
-    event_type,
-    callsign,
-    latitude,
-    longitude
+registration,
+aircraft_type,
+event_type,
+callsign,
+latitude,
+longitude
 ):
 
-    conn = get_connection()
-    cursor = conn.cursor()
+```
+conn = get_connection()
+cursor = conn.cursor()
 
-    cursor.execute(
-        """
-        INSERT INTO aircraft_events
-        (
-            registration,
-            aircraft_type,
-            event_type,
-            callsign,
-            latitude,
-            longitude,
-            timestamp
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            registration,
-            aircraft_type,
-            event_type,
-            callsign,
-            latitude,
-            longitude,
-            datetime.utcnow().isoformat()
-        )
+cursor.execute(
+    """
+    INSERT INTO aircraft_events
+    (
+        registration,
+        aircraft_type,
+        event_type,
+        callsign,
+        latitude,
+        longitude,
+        timestamp
     )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """,
+    (
+        registration,
+        aircraft_type,
+        event_type,
+        callsign,
+        latitude,
+        longitude,
+        datetime.utcnow().isoformat()
+    )
+)
 
-    conn.commit()
-    conn.close()
+conn.commit()
+conn.close()
+```
+
+def add_tracked_aircraft(
+registration,
+icao24,
+aircraft_type
+):
+
+```
+conn = get_connection()
+cursor = conn.cursor()
+
+cursor.execute(
+    """
+    INSERT OR REPLACE INTO tracked_aircraft
+    VALUES (?, ?, ?, 1, ?)
+    """,
+    (
+        registration,
+        icao24.lower(),
+        aircraft_type,
+        datetime.utcnow().isoformat()
+    )
+)
+
+conn.commit()
+conn.close()
+```
+
+def get_tracked_aircraft():
+
+```
+conn = get_connection()
+cursor = conn.cursor()
+
+cursor.execute(
+    """
+    SELECT registration,
+           icao24,
+           aircraft_type
+    FROM tracked_aircraft
+    WHERE active = 1
+    ORDER BY registration
+    """
+)
+
+rows = cursor.fetchall()
+
+conn.close()
+
+return rows
+```

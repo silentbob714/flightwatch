@@ -14,6 +14,8 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
+GUILD_ID = 408190501045534720
+
 
 initialize_database()
 
@@ -31,7 +33,6 @@ class FlightWatchBot(commands.Bot):
         )
 
 
-
     async def setup_hook(self):
 
         await self.load_extension(
@@ -47,11 +48,18 @@ class FlightWatchBot(commands.Bot):
         )
 
 
-        synced = await self.tree.sync()
+        guild = discord.Object(
+            id=GUILD_ID
+        )
+
+
+        synced = await self.tree.sync(
+            guild=guild
+        )
 
 
         print(
-            f"Synced {len(synced)} commands:"
+            f"Synced {len(synced)} guild commands:"
         )
 
 

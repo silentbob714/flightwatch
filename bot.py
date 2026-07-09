@@ -79,7 +79,6 @@ async def fleet(interaction: discord.Interaction):
 
     for plane in aircraft:
 
-
         icao24 = plane[0]
 
         registration = plane[1] or icao24.upper()
@@ -93,7 +92,6 @@ async def fleet(interaction: discord.Interaction):
         category = plane[5] or "Unknown"
 
 
-
         message += (
 
             f"**{registration}**\n"
@@ -105,7 +103,6 @@ async def fleet(interaction: discord.Interaction):
             f"Category: `{category}`\n\n"
 
         )
-
 
 
     await interaction.response.send_message(
@@ -193,6 +190,60 @@ async def track(
         f"Operator: {plane[4]}\n"
 
         f"Category: {plane[5]}"
+
+    )
+
+
+
+
+
+@bot.tree.command(
+    name="status",
+    description="Show FlightWatch system status"
+)
+async def status(interaction: discord.Interaction):
+
+    try:
+
+        conn = get_connection()
+
+        cursor = conn.cursor()
+
+
+        cursor.execute(
+            "SELECT COUNT(*) FROM tracked_aircraft WHERE active = 1"
+        )
+
+
+        tracked_count = cursor.fetchone()[0]
+
+
+        conn.close()
+
+
+        database_status = "🟢 Online"
+
+
+    except Exception:
+
+        tracked_count = "Unknown"
+
+        database_status = "🔴 Error"
+
+
+
+    await interaction.response.send_message(
+
+        "✈ **FlightWatch Status**\n\n"
+
+        f"Bot:\n"
+        f"🟢 Online\n\n"
+
+        f"Database:\n"
+        f"{database_status}\n\n"
+
+        f"Tracked aircraft:\n"
+        f"`{tracked_count}`"
 
     )
 

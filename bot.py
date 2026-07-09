@@ -28,7 +28,7 @@ class FlightWatchBot(commands.Bot):
         intents = discord.Intents.default()
 
         super().__init__(
-            command_prefix="!",
+            command_prefix=None,
             intents=intents
         )
 

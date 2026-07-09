@@ -33,92 +33,77 @@ class FlightWatchBot(commands.Bot):
         )
 
 
-    async def setup_hook(self):
+async def setup_hook(self):
 
-        print("===== SETUP HOOK START =====", flush=True)
+    print("===== SETUP HOOK START =====", flush=True)
 
+    print("Loading cogs...", flush=True)
 
-        print("Loading cogs...", flush=True)
+    await self.load_extension(
+        "cogs.aircraft"
+    )
 
-
-        await self.load_extension(
-            "cogs.aircraft"
-        )
-
-        print("Loaded aircraft cog", flush=True)
+    print("Loaded aircraft cog", flush=True)
 
 
-        await self.load_extension(
-            "cogs.fleet"
-        )
+    await self.load_extension(
+        "cogs.fleet"
+    )
 
-        print("Loaded fleet cog", flush=True)
-
-
-        await self.load_extension(
-            "cogs.system"
-        )
-
-        print("Loaded system cog", flush=True)
+    print("Loaded fleet cog", flush=True)
 
 
+    await self.load_extension(
+        "cogs.system"
+    )
 
-        guild = discord.Object(
-            id=GUILD_ID
-        )
+    print("Loaded system cog", flush=True)
 
+
+    guild = discord.Object(
+        id=GUILD_ID
+    )
+
+
+    print(
+        "Removing old global commands...",
+        flush=True
+    )
+
+    self.tree.clear_commands(
+        guild=None
+    )
+
+
+    print(
+        "Syncing guild commands...",
+        flush=True
+    )
+
+
+    synced = await self.tree.sync(
+        guild=guild
+    )
+
+
+    print(
+        f"Synced {len(synced)} commands:",
+        flush=True
+    )
+
+
+    for command in synced:
 
         print(
-            "Clearing old guild commands...",
+            f"- /{command.name}",
             flush=True
         )
 
 
-        self.tree.clear_commands(
-            guild=guild
-        )
-
-
-        print(
-            "Copying global commands to guild...",
-            flush=True
-        )
-
-
-        self.tree.copy_global_to(
-            guild=guild
-        )
-
-
-        print(
-            "Syncing commands...",
-            flush=True
-        )
-
-
-        synced = await self.tree.sync(
-            guild=guild
-        )
-
-
-        print(
-            f"Synced {len(synced)} commands:",
-            flush=True
-        )
-
-
-        for command in synced:
-
-            print(
-                f"- /{command.name}",
-                flush=True
-            )
-
-
-        print(
-            "===== SETUP HOOK COMPLETE =====",
-            flush=True
-        )
+    print(
+        "===== SETUP HOOK COMPLETE =====",
+        flush=True
+    )
 
 
 

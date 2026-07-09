@@ -45,7 +45,16 @@ class FlightWatchBot(commands.Bot):
             "cogs.system"
         )
 
-        await self.tree.sync()
+        synced = await self.tree.sync()
+
+print(
+    f"Synced {len(synced)} commands:"
+)
+
+for command in synced:
+    print(
+        f"- /{command.name}"
+    )
 
 
 

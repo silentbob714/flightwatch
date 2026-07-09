@@ -60,16 +60,23 @@ class FlightWatchBot(commands.Bot):
 
 
 
-        guild = discord.Object(
-            id=GUILD_ID
+        print(
+            "Copying application commands...",
+            flush=True
         )
 
 
-        print("Syncing guild commands...", flush=True)
+        self.tree.copy_global_to(
+            guild=discord.Object(
+                id=GUILD_ID
+            )
+        )
 
 
         synced = await self.tree.sync(
-            guild=guild
+            guild=discord.Object(
+                id=GUILD_ID
+            )
         )
 
 

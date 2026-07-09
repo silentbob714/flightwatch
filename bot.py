@@ -10,6 +10,7 @@ from database import (
     initialize_database,
     get_tracked_aircraft,
     add_tracked_aircraft,
+    remove_tracked_aircraft,
     get_connection
 )
 
@@ -192,6 +193,43 @@ async def track(
         f"Category: {plane[5]}"
 
     )
+
+
+
+
+
+@bot.tree.command(
+    name="untrack",
+    description="Stop tracking an aircraft"
+)
+@app_commands.describe(
+    registration="Aircraft registration (example: D-ABYN)"
+)
+async def untrack(
+    interaction: discord.Interaction,
+    registration: str
+):
+
+    removed = remove_tracked_aircraft(
+        registration.upper()
+    )
+
+
+    if removed:
+
+        await interaction.response.send_message(
+
+            f"🛑 Stopped tracking **{registration.upper()}**"
+
+        )
+
+    else:
+
+        await interaction.response.send_message(
+
+            f"Aircraft **{registration.upper()}** was not found."
+
+        )
 
 
 

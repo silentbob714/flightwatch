@@ -68,7 +68,32 @@ class FlightWatchBot(commands.Bot):
         )
 
 
-        print("Syncing commands...", flush=True)
+        print(
+            "Clearing old guild commands...",
+            flush=True
+        )
+
+
+        self.tree.clear_commands(
+            guild=guild
+        )
+
+
+        print(
+            "Copying global commands to guild...",
+            flush=True
+        )
+
+
+        self.tree.copy_global_to(
+            guild=guild
+        )
+
+
+        print(
+            "Syncing commands...",
+            flush=True
+        )
 
 
         synced = await self.tree.sync(
@@ -77,7 +102,7 @@ class FlightWatchBot(commands.Bot):
 
 
         print(
-            f"Synced {len(synced)} commands",
+            f"Synced {len(synced)} commands:",
             flush=True
         )
 
@@ -85,12 +110,15 @@ class FlightWatchBot(commands.Bot):
         for command in synced:
 
             print(
-                f"/{command.name}",
+                f"- /{command.name}",
                 flush=True
             )
 
 
-        print("===== SETUP HOOK COMPLETE =====", flush=True)
+        print(
+            "===== SETUP HOOK COMPLETE =====",
+            flush=True
+        )
 
 
 

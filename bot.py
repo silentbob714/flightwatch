@@ -1,3 +1,4 @@
+```python
 import os
 
 import discord
@@ -65,7 +66,25 @@ class FlightWatchBot(commands.Bot):
         )
 
 
-        print("Syncing guild commands...")
+
+        print("Clearing old guild commands...")
+
+
+        self.tree.clear_commands(
+            guild=guild
+        )
+
+
+        await self.tree.sync(
+            guild=guild
+        )
+
+
+        print("Old guild commands cleared.")
+
+
+
+        print("Syncing fresh guild commands...")
 
 
         synced = await self.tree.sync(
@@ -86,6 +105,8 @@ class FlightWatchBot(commands.Bot):
 
 
 
+
+
 bot = FlightWatchBot()
 
 
@@ -100,3 +121,4 @@ async def on_ready():
 
 
 bot.run(TOKEN)
+```

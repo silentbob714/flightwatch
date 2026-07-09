@@ -2,6 +2,8 @@ import os
 
 import discord
 
+from discord.ext import commands
+
 from dotenv import load_dotenv
 
 from database import initialize_database
@@ -17,18 +19,16 @@ initialize_database()
 
 
 
-class FlightWatchBot(discord.Client):
+class FlightWatchBot(commands.Bot):
 
     def __init__(self):
 
         intents = discord.Intents.default()
 
         super().__init__(
+            command_prefix="!",
             intents=intents
         )
-
-        self.tree = discord.app_commands.CommandTree(self)
-
 
 
     async def setup_hook(self):

@@ -1,7 +1,6 @@
 import discord
 
 from discord import app_commands
-
 from discord.ext import commands
 
 from database import (
@@ -11,13 +10,17 @@ from database import (
 )
 
 
+def format_event_type(event_type):
+    if not event_type:
+        return "Unknown Event"
+
+    return event_type.replace("_", " ").strip().title()
+
 
 class Aircraft(commands.Cog):
 
     def __init__(self, bot):
-
         self.bot = bot
-
 
 
     @app_commands.command(
@@ -34,9 +37,7 @@ class Aircraft(commands.Cog):
     ):
 
         conn = get_connection()
-
         cursor = conn.cursor()
-
 
         cursor.execute(
             """
@@ -47,62 +48,37 @@ class Aircraft(commands.Cog):
                 model,
                 operator,
                 category
-
             FROM aircraft_metadata
-
             WHERE registration = ?
-
             """,
-
             (
                 registration.upper(),
             )
         )
 
-
         plane = cursor.fetchone()
-
 
         conn.close()
 
-
-
         if not plane:
-
             await interaction.response.send_message(
                 "Aircraft not found in database."
             )
 
             return
 
-
-
         add_tracked_aircraft(
-
             plane[0],
-
             plane[1],
-
             str(interaction.user)
-
         )
-
-
 
         await interaction.response.send_message(
-
             f"✅ Now tracking **{plane[1]}**\n"
-
             f"{plane[2]} {plane[3]}\n"
-
             f"Operator: {plane[4]}\n"
-
             f"Category: {plane[5]}"
-
         )
-
-
-
 
 
     @app_commands.command(
@@ -122,25 +98,15 @@ class Aircraft(commands.Cog):
             registration.upper()
         )
 
-
         if removed:
-
             await interaction.response.send_message(
-
                 f"🛑 Stopped tracking **{registration.upper()}**"
-
             )
 
         else:
-
             await interaction.response.send_message(
-
                 f"Aircraft **{registration.upper()}** was not found."
-
             )
-
-
-
 
 
     @app_commands.command(
@@ -157,14 +123,11 @@ class Aircraft(commands.Cog):
     ):
 
         conn = get_connection()
-
         cursor = conn.cursor()
-
 
         cursor.execute(
             """
             SELECT
-
                 icao24,
                 registration,
                 manufacturer,
@@ -174,121 +137,69 @@ class Aircraft(commands.Cog):
                 owner,
                 country,
                 category
-
             FROM aircraft_metadata
-
             WHERE registration = ?
-
             """,
-
             (
                 registration.upper(),
             )
         )
 
-
         plane = cursor.fetchone()
-
 
         conn.close()
 
-
-
         if not plane:
-
             await interaction.response.send_message(
-
                 "Aircraft not found in database."
-
             )
 
             return
 
-
-
         embed = discord.Embed(
-
             title="✈ Aircraft Lookup",
-
             description=f"**{plane[1]}**"
-
         )
 
-
         embed.add_field(
-
             name="Aircraft",
-
             value=f"{plane[2]} {plane[3]}",
-
             inline=False
-
         )
 
-
         embed.add_field(
-
             name="ICAO24",
-
             value=plane[0],
-
             inline=True
-
         )
 
-
         embed.add_field(
-
             name="Operator",
-
             value=plane[5] or "Unknown",
-
             inline=True
-
         )
 
-
         embed.add_field(
-
             name="Owner",
-
             value=plane[6] or "Unknown",
-
             inline=True
-
         )
 
-
         embed.add_field(
-
             name="Country",
-
             value=plane[7] or "Unknown",
-
             inline=True
-
         )
-
 
         embed.add_field(
-
             name="Category",
-
             value=plane[8] or "Unknown",
-
             inline=True
-
         )
-
 
         await interaction.response.send_message(
-
             embed=embed
-
         )
-
-
-
 
 
     @app_commands.command(
@@ -305,20 +216,16 @@ class Aircraft(commands.Cog):
     ):
 
         conn = get_connection()
-
         cursor = conn.cursor()
-
 
         cursor.execute(
             """
             SELECT
-
                 m.registration,
                 m.manufacturer,
                 m.model,
                 m.operator,
                 m.icao24,
-
                 s.status,
                 s.callsign,
                 s.altitude,
@@ -326,164 +233,262 @@ class Aircraft(commands.Cog):
                 s.latitude,
                 s.longitude,
                 s.last_seen
-
             FROM aircraft_metadata m
-
             LEFT JOIN aircraft_state s
-
-            ON m.icao24 = s.icao24
-
+                ON m.icao24 = s.icao24
             WHERE m.registration = ?
-
             """,
-
             (
                 registration.upper(),
             )
         )
 
-
         plane = cursor.fetchone()
-
 
         conn.close()
 
-
-
         if not plane:
-
             await interaction.response.send_message(
-
                 "Aircraft not found in database."
-
             )
 
             return
 
-
-
         embed = discord.Embed(
-
             title="✈ FlightWatch Live Info",
-
             description=f"**{plane[0]}**"
-
         )
 
-
         embed.add_field(
-
             name="Aircraft",
-
             value=f"{plane[1]} {plane[2]}",
-
             inline=False
-
         )
 
-
         embed.add_field(
-
             name="Operator",
-
             value=plane[3] or "Unknown",
-
             inline=True
-
         )
 
-
         embed.add_field(
-
             name="ICAO24",
-
             value=plane[4],
-
             inline=True
-
         )
 
-
         embed.add_field(
-
             name="Status",
-
             value=plane[5] or "No current data",
-
             inline=True
-
         )
 
-
         embed.add_field(
-
             name="Callsign",
-
             value=plane[6] or "Unknown",
-
             inline=True
-
         )
 
-
         embed.add_field(
-
             name="Altitude",
-
             value=f"{plane[7]} ft" if plane[7] else "Unknown",
-
             inline=True
-
         )
-
 
         embed.add_field(
-
             name="Speed",
-
             value=f"{plane[8]} knots" if plane[8] else "Unknown",
-
             inline=True
-
         )
 
-
-        if plane[9] and plane[10]:
-
+        if plane[9] is not None and plane[10] is not None:
             embed.add_field(
-
                 name="Position",
-
                 value=f"{plane[9]}, {plane[10]}",
-
                 inline=False
-
             )
 
-
         embed.add_field(
-
             name="Last Seen",
-
             value=plane[11] or "Unknown",
-
             inline=False
-
         )
-
 
         await interaction.response.send_message(
-
             embed=embed
-
         )
 
 
+    @app_commands.command(
+        name="history",
+        description="Show recent events for an aircraft"
+    )
+    @app_commands.describe(
+        aircraft=(
+            "Aircraft registration or ICAO24 "
+            "(example: D-ABYN or 3c4b2e)"
+        )
+    )
+    async def history(
+        self,
+        interaction: discord.Interaction,
+        aircraft: str
+    ):
 
+        aircraft_input = aircraft.strip()
+        registration_input = aircraft_input.upper()
+        icao24_input = aircraft_input.lower()
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                icao24,
+                registration,
+                manufacturer,
+                model,
+                operator
+            FROM aircraft_metadata
+            WHERE UPPER(registration) = ?
+               OR LOWER(icao24) = ?
+            LIMIT 1
+            """,
+            (
+                registration_input,
+                icao24_input
+            )
+        )
+
+        plane = cursor.fetchone()
+
+        if not plane:
+            conn.close()
+
+            await interaction.response.send_message(
+                f"Aircraft **{aircraft_input}** was not found "
+                "in the metadata database."
+            )
+
+            return
+
+        icao24 = plane[0]
+        registration = plane[1]
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM aircraft_events
+            WHERE LOWER(icao24) = ?
+            """,
+            (
+                icao24.lower(),
+            )
+        )
+
+        total_events = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT
+                event_type,
+                callsign,
+                latitude,
+                longitude,
+                timestamp
+            FROM aircraft_events
+            WHERE LOWER(icao24) = ?
+            ORDER BY id DESC
+            LIMIT 10
+            """,
+            (
+                icao24.lower(),
+            )
+        )
+
+        events = cursor.fetchall()
+
+        conn.close()
+
+        if not events:
+            await interaction.response.send_message(
+                f"No event history has been recorded for "
+                f"**{registration}**."
+            )
+
+            return
+
+        aircraft_name = " ".join(
+            part
+            for part in (
+                plane[2],
+                plane[3]
+            )
+            if part
+        )
+
+        embed = discord.Embed(
+            title="📜 FlightWatch Aircraft History",
+            description=(
+                f"**{registration}**\n"
+                f"{aircraft_name or 'Aircraft type unknown'}\n"
+                f"ICAO24: `{icao24}`"
+            )
+        )
+
+        if plane[4]:
+            embed.add_field(
+                name="Operator",
+                value=plane[4],
+                inline=False
+            )
+
+        for index, event in enumerate(events, start=1):
+            event_type = format_event_type(
+                event[0]
+            )
+
+            callsign = event[1] or "Unknown"
+            latitude = event[2]
+            longitude = event[3]
+            timestamp = event[4] or "Unknown"
+
+            details = [
+                f"**Recorded:** {timestamp}",
+                f"**Callsign:** {callsign}"
+            ]
+
+            if latitude is not None and longitude is not None:
+                map_url = (
+                    "https://www.google.com/maps/search/"
+                    f"?api=1&query={latitude},{longitude}"
+                )
+
+                details.append(
+                    f"**Position:** "
+                    f"[{latitude}, {longitude}]({map_url})"
+                )
+
+            embed.add_field(
+                name=f"{index}. {event_type}",
+                value="\n".join(details),
+                inline=False
+            )
+
+        embed.set_footer(
+            text=(
+                f"Showing newest {len(events)} "
+                f"of {total_events} recorded events"
+            )
+        )
+
+        await interaction.response.send_message(
+            embed=embed
+        )
 
 
 async def setup(bot):
-
     await bot.add_cog(
         Aircraft(bot)
     )

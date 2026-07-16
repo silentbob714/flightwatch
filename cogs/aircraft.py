@@ -488,6 +488,271 @@ class Aircraft(commands.Cog):
         )
 
 
+    @app_commands.command(
+        name="stats",
+        description="Show FlightWatch fleet statistics"
+    )
+    async def stats(
+        self,
+        interaction: discord.Interaction
+    ):
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM aircraft_metadata
+            """
+        )
+
+        metadata_count = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM tracked_aircraft
+            WHERE active = 1
+            """
+        )
+
+        tracked_count = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(
+                    NULLIF(TRIM(s.status), ''),
+                    'No current state'
+                ) AS status_label,
+                COUNT(*)
+            FROM tracked_aircraft t
+            LEFT JOIN aircraft_state s
+                ON t.icao24 = s.icao24
+            WHERE t.active = 1
+            GROUP BY
+                COALESCE(
+                    NULLIF(TRIM(s.status), ''),
+                    'No current state'
+                )
+            ORDER BY
+                COUNT(*) DESC,
+                status_label
+            """
+        )
+
+        state_counts = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM aircraft_events
+            """
+        )
+
+        total_events = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(
+                    NULLIF(TRIM(event_type), ''),
+                    'unknown'
+                ) AS event_label,
+                COUNT(*)
+            FROM aircraft_events
+            GROUP BY
+                COALESCE(
+                    NULLIF(TRIM(event_type), ''),
+                    'unknown'
+                )
+            ORDER BY
+                COUNT(*) DESC,
+                event_label
+            """
+        )
+
+        event_counts = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT
+                m.registration,
+                s.callsign,
+                s.status,
+                s.last_seen
+            FROM aircraft_state s
+            LEFT JOIN aircraft_metadata m
+                ON s.icao24 = m.icao24
+            WHERE s.last_seen IS NOT NULL
+            ORDER BY s.last_seen DESC
+            LIMIT 1
+            """
+        )
+
+        latest_state = cursor.fetchone()
+
+        cursor.execute(
+            """
+            SELECT
+                m.registration,
+                e.icao24,
+                e.event_type,
+                e.callsign,
+                e.timestamp
+            FROM aircraft_events e
+            LEFT JOIN aircraft_metadata m
+                ON e.icao24 = m.icao24
+            ORDER BY e.id DESC
+            LIMIT 1
+            """
+        )
+
+        latest_event = cursor.fetchone()
+
+        conn.close()
+
+        embed = discord.Embed(
+            title="📊 FlightWatch Statistics",
+            description="Current fleet and event database summary"
+        )
+
+        embed.add_field(
+            name="Fleet",
+            value=(
+                f"**Tracked aircraft:** {tracked_count}\n"
+                f"**Metadata records:** {metadata_count}"
+            ),
+            inline=False
+        )
+
+        if state_counts:
+            state_lines = []
+
+            for state in state_counts:
+                state_lines.append(
+                    f"**{state[0]}:** {state[1]}"
+                )
+
+            state_summary = "\n".join(
+                state_lines
+            )
+
+        else:
+            state_summary = "No actively tracked aircraft."
+
+        embed.add_field(
+            name="Current Tracked States",
+            value=state_summary,
+            inline=False
+        )
+
+        if event_counts:
+            event_lines = []
+
+            for event in event_counts:
+                event_lines.append(
+                    f"**{format_event_type(event[0])}:** "
+                    f"{event[1]}"
+                )
+
+            event_summary = "\n".join(
+                event_lines
+            )
+
+        else:
+            event_summary = "No events recorded."
+
+        embed.add_field(
+            name=f"Recorded Events — {total_events} Total",
+            value=event_summary,
+            inline=False
+        )
+
+        if latest_state:
+            registration = (
+                latest_state[0]
+                or "Unknown registration"
+            )
+
+            callsign = (
+                latest_state[1]
+                or "Unknown"
+            )
+
+            status = (
+                latest_state[2]
+                or "Unknown"
+            )
+
+            last_seen = (
+                latest_state[3]
+                or "Unknown"
+            )
+
+            embed.add_field(
+                name="Newest Stored Aircraft State",
+                value=(
+                    f"**Aircraft:** {registration}\n"
+                    f"**Callsign:** {callsign}\n"
+                    f"**Status:** {status}\n"
+                    f"**Last seen:** {last_seen}"
+                ),
+                inline=False
+            )
+
+        else:
+            embed.add_field(
+                name="Newest Stored Aircraft State",
+                value="No aircraft states have been recorded.",
+                inline=False
+            )
+
+        if latest_event:
+            registration = (
+                latest_event[0]
+                or latest_event[1]
+                or "Unknown aircraft"
+            )
+
+            event_type = format_event_type(
+                latest_event[2]
+            )
+
+            callsign = (
+                latest_event[3]
+                or "Unknown"
+            )
+
+            timestamp = (
+                latest_event[4]
+                or "Unknown"
+            )
+
+            embed.add_field(
+                name="Newest Recorded Event",
+                value=(
+                    f"**Aircraft:** {registration}\n"
+                    f"**Event:** {event_type}\n"
+                    f"**Callsign:** {callsign}\n"
+                    f"**Recorded:** {timestamp}"
+                ),
+                inline=False
+            )
+
+        else:
+            embed.add_field(
+                name="Newest Recorded Event",
+                value="No aircraft events have been recorded.",
+                inline=False
+            )
+
+        await interaction.response.send_message(
+            embed=embed
+        )
+
+
 async def setup(bot):
     await bot.add_cog(
         Aircraft(bot)
